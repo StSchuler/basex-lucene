@@ -24,15 +24,33 @@ import org.basex.query.value.node.*;
 public class Lucene extends QueryModule{
 
 
+  /**
+   * Creates new Query Instance with next ID.
+   * @return ID
+   */
   public Int connect() {
     int id = LuceneIndex.getID();
     new LuceneIndex(id);
     return Int.get(id);
   }
+  
+  /**
+   * Creates Lucene Index of the given Database.
+   * The main elements denotes on what basis the Documents 
+   * are created.
+   * @param name Database name
+   * @param mainEle Main elements
+   * @throws Exception Exception
+   */
+  public void luceneIndex(final String name, final String mainEle) throws Exception{
+	 Data data = queryContext.resources.database(name, null);
+	 LuceneIndex.luceneIndexSchema(queryContext.context, data, name, mainEle);
+  }
 
   /**
    * Queries the given input String and returns
    * a collection of all found ANodes.
+   * @param id Query id
    * @param query Query
    * @param name String
    * @throws Exception exception
@@ -50,7 +68,8 @@ public class Lucene extends QueryModule{
    * Queries the given input String and returns
    * a collection of all found ANodes and drills
    * down on given element.
-   * @param name Databasename
+   * @param id Query id
+   * @param dim Dimension
    * @param drillDownTerm Drilldownterm
    * @throws Exception exception
    */
@@ -71,20 +90,21 @@ public class Lucene extends QueryModule{
   }
 
   /**
-   * Display Lucene search resuts of defined Query.
-   * @param name Database name
-   * @return Lucene sreach results
+   * Display Lucene search results of defined Query.
+   * @param id Query id
+   * @return ANode[] results
    * @throws QueryException Query exception
+   * @throws IOException I/O Exception
    */
-  public ANode[] result(final Int id) throws QueryException {
+  public ANode[] result(final Int id) throws QueryException, IOException {
     LuceneIndex session = LuceneIndex.getInstance(((BigInteger) id.toJava()).intValue());
     Data data = session.getData();
 
-    ArrayList<Integer> resultContainer = session.getResults();
+    ArrayList<Integer> resultContainer = session.getResults(false);
     int length = resultContainer.size();
-
+    
     ANode[] nodes = new ANode[length];
-
+    
     for(int i = 0; i < length; i++) {
       int pre =  resultContainer.get(i);
       DBNode n = new DBNode(data, data.pre(pre));
@@ -92,6 +112,21 @@ public class Lucene extends QueryModule{
     }
     return nodes;
 
+  }
+  
+  /**
+   * Display Lucene facet results of defined Query.
+   * @param id Query id
+   * @return ANode[] result
+   * @throws IOException
+   */
+  public ANode[] facetResult(final Int id) throws IOException {
+	LuceneIndex session = LuceneIndex.getInstance(((BigInteger) id.toJava()).intValue());
+	
+	session.getResults(true);
+	ANode[] nodes = session.getFResult();
+	
+	return nodes; 
   }
 
   /**
